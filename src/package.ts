@@ -1,7 +1,7 @@
-import { bold } from 'chalk';
+import chalk from 'chalk';
 import { existsSync } from 'fs';
 import validatePackageName from 'validate-npm-package-name';
-import { Spec, toSpecConnector } from './spec';
+import { Spec, toSpecConnector } from './spec.js';
 
 export interface Package {
   readonly name: string;
@@ -12,13 +12,13 @@ export interface Package {
 export function resolvePackage(packagePath: string): Package {
   const specPath = `${packagePath}/package.json`;
   if (!existsSync(specPath)) {
-    throw Error(`${bold(packagePath)} is not a package!`);
+    throw Error(`${chalk.bold(packagePath)} is not a package!`);
   }
   const specConnector = toSpecConnector(specPath);
   const spec = specConnector.get();
 
   if (!isPackageName(spec.name)) {
-    throw Error(`${bold(spec.name)} is not a valid package name!`);
+    throw Error(`${chalk.bold(spec.name)} is not a valid package name!`);
   }
 
   return {

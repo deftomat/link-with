@@ -1,1 +1,1 @@
-export { getLinkedPackages } from './src/state';
+export { getLinkedPackages } from './src/state.js';

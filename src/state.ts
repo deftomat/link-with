@@ -1,6 +1,6 @@
-import { outputJSONSync, readJSONSync } from 'fs-extra';
-import { Package } from './package';
-import { Project, resolveProject } from './project';
+import { outputJSONSync, readJSONSync } from 'fs-extra/esm';
+import { Package } from './package.js';
+import { Project, resolveProject } from './project.js';
 
 function toStateFilePath(project: Project) {
   return `${project.cachePath}/state.json`;

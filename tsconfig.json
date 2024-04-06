@@ -1,15 +1,16 @@
 {
   "extends": "@deftomat/opinionated/configs/tsconfig.json",
   "compilerOptions": {
-    "declaration": true,
-    "inlineSources": true,
-    "lib": ["ES2019"],
-    "module": "commonjs",
-    "outDir": "dist",
-    "resolveJsonModule": true,
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "ES2019"
+    "target": "ES2021",
+    "outDir": "./dist/esm",
+    "declaration": true,
+    "resolveJsonModule": true,
+    "inlineSources": true
   },
   "exclude": ["node_modules", "dist"]
 }

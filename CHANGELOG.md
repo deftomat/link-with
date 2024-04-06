@@ -1,3 +1,11 @@
+# 1.0.0
+
+- feat: add support for `npm` alongside with `yarn v1`
+- feat: switch to `npm`
+- feat: switch to `esm`
+- chore: upgrade dependencies
+- BREAKING: requires Node v18 or newer
+
 # 0.3.0
 
 - feat: update `.yarn-integrity` file when source change

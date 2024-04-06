@@ -1,16 +1,21 @@
-import { bold, cyan, yellow } from 'chalk';
+import chalk from 'chalk';
 import chokidar, { FSWatcher } from 'chokidar';
-import execa, { ExecaChildProcess } from 'execa';
-import fs from 'fs';
-import fsExtra from 'fs-extra';
+import { ExecaChildProcess } from 'execa';
+import fsExtra from 'fs-extra/esm';
 import ora from 'ora';
 import path from 'path';
-import { mergeDeepRight } from 'ramda';
-import { cleanups } from './cleanup';
-import { renderCompilationWarning } from './helpers';
-import { Package, resolvePackage } from './package';
-import { Project, resolveProject } from './project';
-import { markAsLinked } from './state';
+import { cleanups } from './cleanup.js';
+import { renderCompilationWarning } from './helpers.js';
+import { Package, resolvePackage } from './package.js';
+import {
+  toDependencyInstaller,
+  toInstallCommand,
+  toLockFile,
+  updateProjectSpec as toUpdatedProjectSpec,
+  triggerRebuild
+} from './packageManager.js';
+import { Project, resolveProject } from './project.js';
+import { markAsLinked } from './state.js';
 
 export async function link(packagePaths: string[], cwd: string) {
   let firstInstallation = true;
@@ -53,16 +58,16 @@ export async function link(packagePaths: string[], cwd: string) {
 }
 
 async function ensureDependencyOn(packages: Package[], project: Project) {
-  const spinner = ora({ text: cyan('Checking project dependencies') }).start();
-  const lockFile = (await fs.promises.readFile(`${project.root}/yarn.lock`)).toString();
+  const spinner = ora({ text: chalk.cyan('Checking project dependencies') }).start();
+  const lockFile = await toLockFile(project);
 
   try {
     await Promise.all(
       packages.map(({ name }) => {
         if (!lockFile.includes(name)) {
           throw Error(
-            yellow(`${bold(name)} is not a project's dependency!\n`) +
-              `Please add this package as dependency and run ${bold('yarn install')}.`
+            chalk.yellow(`${chalk.bold(name)} is not a project's dependency!\n`) +
+              `Please add this package as dependency and run ${chalk.bold(toInstallCommand(project))}.`
           );
         }
       })
@@ -77,7 +82,7 @@ async function ensureDependencyOn(packages: Package[], project: Project) {
 
 function installPackages(packages: Package[], project: Project): Installation {
   let childProcess: ExecaChildProcess;
-  const spinner = ora({ text: cyan('Installing transitive dependencies') }).start();
+  const spinner = ora({ text: chalk.cyan('Installing transitive dependencies') }).start();
 
   return {
     result: run(),
@@ -94,10 +99,9 @@ function installPackages(packages: Package[], project: Project): Installation {
     try {
       const resolutions = copyPackagesToCache(packages, project);
 
-      const updatedProjectSpec = mergeDeepRight(project.spec.get(), { resolutions });
-      project.spec.set(updatedProjectSpec);
+      project.spec.set(toUpdatedProjectSpec({ project, resolutions }));
 
-      childProcess = execa('yarn', ['install', '--force', '--pure-lockfile', '--non-interactive']);
+      childProcess = toDependencyInstaller(project);
       await childProcess;
 
       cleanups.delete(cleanup);
@@ -116,7 +120,7 @@ function installPackages(packages: Package[], project: Project): Installation {
       spinner.fail('Installation failed with the following error:');
       console.error(e.message);
       console.info(
-        yellow.inverse(
+        chalk.yellow.inverse(
           "Process will try to reinstall transitive dependencies on next change in linked package's manifest."
         )
       );
@@ -139,17 +143,6 @@ function createSyncer(packages: Package[], project: Project) {
   return {
     start() {
       if (watchers.length > 0) return;
-
-      let touchTimeout;
-      function touchYarnIntegrity() {
-        clearTimeout(touchTimeout);
-        touchTimeout = setTimeout(() => {
-          const now = Date.now();
-          // If any build tool is watching for changes in node_modules/.yarn-integrity
-          // then we want to trigger the rebuild.
-          fsExtra.utimes(`${project.root}/node_modules/.yarn-integrity`, now, now);
-        }, 300);
-      }
 
       watchers = packages.map(pkg =>
         chokidar
@@ -175,7 +168,7 @@ function createSyncer(packages: Package[], project: Project) {
               default:
                 throw Error('Unexpected FS event!');
             }
-            touchYarnIntegrity();
+            triggerRebuild(project);
           })
       );
 

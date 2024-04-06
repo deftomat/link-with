@@ -1,6 +1,6 @@
-import findUp from 'find-up';
+import { findUpSync } from 'find-up';
 import path from 'path';
-import { Spec, toSpecConnector } from './spec';
+import { Spec, toSpecConnector } from './spec.js';
 
 export interface Project {
   readonly root: string;
@@ -10,7 +10,7 @@ export interface Project {
 
 export function resolveProject(cwd: string): Project {
   const toCachePath = (root: string) => `${root}/node_modules/.cache/link-with`;
-  const specPath = findUp.sync('package.json', { cwd });
+  const specPath = findUpSync('package.json', { cwd });
   if (specPath == null) throw Error('Invalid package');
 
   const specConnector = toSpecConnector(specPath);
@@ -21,7 +21,7 @@ export function resolveProject(cwd: string): Project {
   };
   if (specConnector.get().workspaces != null) return project;
 
-  const parentSpecPath = findUp.sync('package.json', { cwd: `${cwd}/../` });
+  const parentSpecPath = findUpSync('package.json', { cwd: `${cwd}/../` });
   if (parentSpecPath == null) return project;
 
   const parentSpecConnector = toSpecConnector(parentSpecPath);

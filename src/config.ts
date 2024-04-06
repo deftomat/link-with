@@ -1,6 +1,7 @@
-import { green, red, yellow } from 'chalk';
+import chalk from 'chalk';
 import Configstore from 'configstore';
-import { readdirSync, readJson } from 'fs-extra';
+import { readJson } from 'fs-extra/esm';
+import { readdirSync } from 'node:fs';
 import inquirer from 'inquirer';
 import autocomplete from 'inquirer-checkbox-autocomplete-prompt';
 import fileTreeSelection from 'inquirer-file-tree-selection-prompt';
@@ -35,14 +36,14 @@ export async function collectConfig(): Promise<void> {
   ]);
 
   if (packagesRoots.length === 0) {
-    console.error(red('You need to select at least one directory!'));
+    console.error(chalk.red('You need to select at least one directory!'));
     process.exit(1);
   }
 
   const config: Config = { packagesRoots };
   new Configstore(storeName).all = config;
 
-  console.info(green('Configuration successfully updated.'));
+  console.info(chalk.green('Configuration successfully updated.'));
 }
 
 export async function selectPackages(): Promise<string[]> {
@@ -52,7 +53,9 @@ export async function selectPackages(): Promise<string[]> {
 
   if (packages.length === 0) {
     console.warn(
-      yellow('No packages to link! Please update the configuration accordingly using "-c" option.')
+      chalk.yellow(
+        'No packages to link! Please update the configuration accordingly using "-c" option.'
+      )
     );
     process.exit(1);
   }
